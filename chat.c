@@ -47,7 +47,7 @@ hints.ai_family = AF_UNSPEC; // handles both ip types
 hints.ai_socktype = SOCK_STREAM; // specifies TCP socket
 hints.ai_flags = AI_PASSIVE;     // will fill in our ip
 
-if((status = getaddrinfo(hostbuff, "3490", &hints, &servinfo)) != 0) {
+if((status = getaddrinfo(hostbuff, port, &hints, &servinfo)) != 0) {
 
 fprintf(stderr, "getinfo error : %s\n", gai_strerror(status));
 return 2;
