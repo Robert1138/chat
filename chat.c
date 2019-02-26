@@ -87,7 +87,34 @@ char *ipver;
 // freeaddrinfo(servinfo);
 
 //now we will create the socket
-int lisSock;
+int lisSock; // think of this as socket file descriptor
+
+
+// if more than one IP address this will check all and create a socket with the first one that works
+for(in = servinfo; in != NULL; in = in->ai_next) {
+
+ if ((lisSock = socket(in->ai_family, in->ai_socktype, in->ai_protocol)) == -1) {
+ perror("error creating the socket");
+ continue;
+ }
+ 
+ 
+ if (bind(lisSock, in->ai_addr, in->ai_addrlen) == -1) {
+ close(sockfd);
+ perror("socket binding did not work");
+ continue;
+ }
+ break;
+}
+
+// listening with a backlog of 5 connections
+if(listen(lisSock, 5) < 0 ) {
+perror("error listening at given port");
+return 0;	
+}
+
+
+///////////////////////////////////////////////////////////// end of createing socket
 
 
 
