@@ -100,7 +100,7 @@ for(in = servinfo; in != NULL; in = in->ai_next) {
  
  
  if (bind(lisSock, in->ai_addr, in->ai_addrlen) == -1) {
- close(sockfd);
+ close(lisSock);
  perror("socket binding did not work");
  continue;
  }
@@ -114,7 +114,7 @@ return 0;
 }
 
 
-///////////////////////////////////////////////////////////// end of createing socket
+///////////////////////////////////////////////////////////// end of socket set up 
 
 
 
@@ -129,16 +129,36 @@ char str2[50];
 const char s[2] = " "; // token delimeter
 
 // num is a placeholder 
-// will be replaced with FD_ISSET when select in ready
-int num = 0;
-
+int num = 0; // will be replaced with FD_ISSET when select in ready
 int numTok = 0; //get num of tokens to create size of array
+
+// Some setup for 
+// select(),
+// accept() -------- this is called when user inputs connect <ip address> <port>
+
+struct timeval tv;  
+fd_set readfds;  // this will hold all our file descriptors
+
+tv.tv_sec = 10;        // wait 10 or so seconds before timing out 
+tv.tv_usec = 500000;
+
+
+FD_ZERO(&readfds);      // clear the set before we do anything with it
+FD_SET(0, &readfds);    // add stdin to readfds
+
+
+int newSock;            // incoming socket to be accepted
+
+
 
 
 while(1) {
 
+// SELECT() here 
+
    numTok = 0;
-   if(num == 0) {
+   
+   if(num == 0) {  // this will be FD_ISSET(STDIN);
 
      fgets(str, 20, stdin);
      strcpy(str2, str);
@@ -148,29 +168,27 @@ while(1) {
  
      token = strtok(str, s);
 
+	 // Im sure the following could be donw better but for now this works 
+	 // first we count the tokens
+     // then we put each token into a list 
+     // most commands will only require us to look at array postions 0, 1, and 2
+     // but if array 0 is "send" then the starting with strList[2] to strList[n - 1] we will
+	 // strcat these into a message buffer that will be sent via send()
+ 	 
      while(token != NULL) {
-     printf("This is the token: %s\n", token);
-    
      numTok++;   
      token = strtok(NULL, s);
      }
 
-char **strList = calloc (numTok, sizeof(char*)); 
-
-
+     char **strList = calloc (numTok, sizeof(char*)); 
 
      int i = 0;
      token = strtok(str2, s);
   
-printf("This is the str2: %s\n", str2);
-
      while(token != NULL) {
-     printf("Token in second is %s\n", token);
      strList[i] = token;
-     printf("strList is %s\n", strList[i]);
      i++;   
      token = strtok(NULL, s);
-
      }
 
 
@@ -226,7 +244,10 @@ printf("%s ", strList[j]);
 } else if(strcmp(strList[0], "terminate\n") == 0) {
 	
 } else if(strcmp(strList[0], "exit\n") == 0) {
-	
+ 
+       // close the listening socket and close the program down 
+       close(lisSock);
+       return 0;
 }
 
 
@@ -240,11 +261,11 @@ printf("%s ", strList[j]);
  
    }
   
-   if(num == 1) {
+   if(num == 1) {  // this will be FD_ISSET(lisSock);
 
 
    }
-   if(num == 2) {
+   if(num == 2) { // this will be FD_ISSET(Connection socket list);
 
 
    }
@@ -254,3 +275,4 @@ printf("%s ", strList[j]);
 
 return 0;
 }
+
